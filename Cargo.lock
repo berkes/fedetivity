@@ -445,6 +445,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "fedetivity"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-codec",
+ "actix-rt",
+ "async-trait",
+ "awc",
+ "env_logger",
+ "futures",
+ "futures-util",
+ "log",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1123,21 +1138,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24eb03ba0eab1fd845050058ce5e616558e8f8d8fca633e6b163fe25c797213a"
 dependencies = [
  "once_cell",
-]
-
-[[package]]
-name = "transmitter"
-version = "0.1.0"
-dependencies = [
- "actix",
- "actix-codec",
- "actix-rt",
- "async-trait",
- "awc",
- "env_logger",
- "futures",
- "futures-util",
- "log",
 ]
 
 [[package]]
