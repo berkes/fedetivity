@@ -31,10 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let determinator = Determinator::start(Determinator {});
 
-    let (_, framed) = Client::default()
-        .ws(ws_uri)
-        .connect()
-        .await?;
+    let (_, framed) = Client::default().ws(ws_uri).connect().await?;
     let (sink, stream): (WsFramedSink, WsFramedStream) = framed.split();
     let _addr = FedClient::start(determinator.clone().recipient(), sink, stream);
 
