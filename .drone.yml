@@ -2,6 +2,10 @@
 kind: pipeline
 name: default
 
+services:
+  - name: webmocket
+    image: berkes/webmocket:latest
+
 steps:
   - name: test
     image: rust:1.62
