@@ -8,30 +8,33 @@ use log::{debug, info};
 extern crate fedetivity;
 
 use fedetivity::transmitter::*;
+use fedetivity::determinator::*;
 
-use actix::{Actor, Context, Handler};
-use fedetivity::messages::Activity;
+use actix::{Context, Actor, Handler};
+use fedetivity::messages::Job;
 
-pub struct Determinator;
+struct LogWorker;
 
-impl Actor for Determinator {
+impl Actor for LogWorker {
     type Context = Context<Self>;
 }
 
-impl Handler<Activity> for Determinator {
+impl Handler<Job> for LogWorker {
     type Result = ();
 
-    fn handle(&mut self, _msg: Activity, _ctx: &mut Self::Context) {
-        // noop
+    fn handle(&mut self, msg: Job, ctx: &mut Self::Context) -> Self::Result {
+        debug!("Context when handling Job: {:?}", ctx);
+        info!("Received message: {:?}", msg)
     }
 }
+
 
 #[actix_rt::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let ws_uri = env::var("MASTODON_WS_URL").unwrap_or("ws://localhost:3000/ws".to_string());
 
-    let determinator = Determinator::start(Determinator {});
+    let determinator = Determinator::start(LogWorker.start().recipient());
 
     debug!("Connecting to {}", ws_uri);
     let client = Client::builder()

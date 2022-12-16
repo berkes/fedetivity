@@ -64,8 +64,8 @@ async fn test_message_calls_is_handled() {
         .unwrap();
     let (sink, stream): (WsFramedSink, WsFramedStream) = framed.split();
 
-    let sut = FedClient::start(receiver_addr.clone().recipient(), sink, stream);
-    sut.send(Ping).await.unwrap();
+    let _sut = FedClient::start(receiver_addr.clone().recipient(), sink, stream);
+ 
     // Add a message
     Client::default()
         .post("http://localhost:3000/messages")
