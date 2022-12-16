@@ -3,6 +3,8 @@ use std::env;
 use awc::Client;
 use futures_util::stream::StreamExt;
 
+use log::{debug, info};
+
 extern crate fedetivity;
 
 use fedetivity::transmitter::*;
@@ -31,7 +33,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let determinator = Determinator::start(Determinator {});
 
-    let (_, framed) = Client::default().ws(ws_uri).connect().await?;
+    debug!("Connecting to {}", ws_uri);
+    let client = Client::builder()
+        .max_http_version(awc::http::Version::HTTP_11)
+        .finish();
+    let (_, framed) = client.ws(ws_uri).connect().await?;
+
     let (sink, stream): (WsFramedSink, WsFramedStream) = framed.split();
     let _addr = FedClient::start(determinator.clone().recipient(), sink, stream);
 
