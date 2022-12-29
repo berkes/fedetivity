@@ -35,20 +35,20 @@ mod tests {
     pub struct Assert;
 
     #[derive(Clone, Default)]
-    struct TestWorker {
+    struct TestProbe {
         received: Vec<Job>
     }
-    impl Actor for TestWorker {
+    impl Actor for TestProbe {
         type Context = Context<Self>;
     }
-    impl Handler<Job> for TestWorker {
+    impl Handler<Job> for TestProbe {
         type Result = ();
 
         fn handle(&mut self, msg: Job, _ctx: &mut Self::Context) -> Self::Result {
             self.received.push(msg);
         }
     }
-    impl Handler<Assert> for TestWorker {
+    impl Handler<Assert> for TestProbe {
         type Result = Vec<Job>;
 
         fn handle(&mut self, _msg: Assert, _ctx: &mut Self::Context) -> Self::Result {
@@ -58,9 +58,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_that_determinator_handles_activity() {
-        env_logger::init();
-        let worker = TestWorker::default();
-        let worker_addr = worker.start();
+        let worker_addr = TestProbe::default().start();
 
         let sut = Determinator::start(worker_addr.clone().recipient());
         sut.send(Activity).await.unwrap();
