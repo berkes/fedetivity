@@ -4,8 +4,9 @@ use actix::prelude::*;
 use fedetivity::messages::*;
 use fedetivity::transmitter::*;
 
-use awc::Client;
-use futures_util::stream::StreamExt;
+use futures::FutureExt;
+use futures::TryFutureExt;
+use reqwest::Client;
 
 #[derive(Message, Debug)]
 #[rtype(result = "Vec<Activity>")]
@@ -35,9 +36,6 @@ impl Handler<GetReceived> for TestReceiver {
     }
 }
 
-use awc::ws;
-use futures_util::sink::SinkExt as _;
-
 #[actix_rt::test]
 async fn test_message_calls_is_handled() {
     common::setup();
@@ -52,26 +50,18 @@ async fn test_message_calls_is_handled() {
     let receiver = TestReceiver { received: vec![] };
     let receiver_addr = receiver.start();
 
-    let (_, mut framed) = Client::default()
-        .ws("http://localhost:3000/ws")
-        .connect()
-        .await
-        .expect("Could not connect to websocket server. Is it running?");
-
-    framed
-        .send(ws::Message::Text("Hello".into()))
-        .await
-        .unwrap();
-    let (sink, stream): (WsFramedSink, WsFramedStream) = framed.split();
-
-    let _sut = FedClient::start(receiver_addr.clone().recipient(), sink, stream);
+    let sut = FedClient::start(receiver_addr.clone().recipient(), "wss://localhost:3000/ws".to_string());
  
-    // Add a message
-    Client::default()
+    sut.send(Connect).await.unwrap();
+
+    // Let the server send us a message
+    let resp = Client::default()
         .post("http://localhost:3000/messages")
-        .send_body("New here!")
+        .body("New here!")
+        .send()
         .await
         .unwrap();
+    dbg!(resp);
 
     // Wait untill the message is propagated to our test receiver
     let max_rounds = 5;

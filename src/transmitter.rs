@@ -1,36 +1,24 @@
-use actix::{io::SinkWrite, prelude::*};
-use actix_codec::Framed;
-use awc::{error::WsProtocolError, ws, ws::Frame, BoxedSocket};
-use futures::stream::{SplitSink, SplitStream};
+use actix::prelude::*;
+
+use tungstenite::Message;
 
 use log::{debug, error};
 
 use crate::messages::*;
 
-pub type WsFramedSink = SplitSink<Framed<BoxedSocket, ws::Codec>, ws::Message>;
-pub type WsFramedStream = SplitStream<Framed<BoxedSocket, ws::Codec>>;
-
 pub struct Socket;
 pub struct HttpRequest;
 
 pub struct FedClient {
-    sink: SinkWrite<ws::Message, WsFramedSink>,
     determinator: Recipient<Activity>,
+    ws_uri: String,
 }
 
 impl FedClient {
-    pub fn start(
-        determinator: Recipient<Activity>,
-        sink: WsFramedSink,
-        stream: WsFramedStream,
-    ) -> Addr<Self> {
-        FedClient::create(|ctx| {
-            debug!("Start FedClient");
-            ctx.add_stream(stream);
-            FedClient {
-                sink: SinkWrite::new(sink, ctx),
-                determinator,
-            }
+    pub fn start(determinator: Recipient<Activity>, ws_uri: String) -> Addr<Self> {
+        FedClient::create(|_ctx| FedClient {
+            determinator,
+            ws_uri,
         })
     }
 }
@@ -39,59 +27,47 @@ impl Actor for FedClient {
     type Context = Context<Self>;
 
     fn stopping(&mut self, _ctx: &mut Self::Context) -> Running {
-        if self.sink.write(ws::Message::Close(None)).is_err() {
-            error!("Could not close the connection");
-        }
-
         debug!("Stopped");
         actix::Running::Stop
     }
 }
 
-impl Handler<Ping> for FedClient {
+impl Handler<Connect> for FedClient {
     type Result = ();
 
-    fn handle(&mut self, _msg: Ping, _ctx: &mut Self::Context) {
-        debug!("Pinging server");
-        if let Err(error) = self.sink.write(ws::Message::Ping("".into())) {
-            error!("Error FedClient {:?}", error);
-        }
-    }
-}
+    fn handle(&mut self, _msg: Connect, ctx: &mut Self::Context) {
+        debug!("Connecting with {}", self.ws_uri);
 
-impl StreamHandler<Result<ws::Frame, WsProtocolError>> for FedClient {
-    fn handle(&mut self, item: Result<ws::Frame, WsProtocolError>, _ctx: &mut Self::Context) {
-        match item.unwrap() {
-            Frame::Text(text_bytes) => {
-                let text = std::str::from_utf8(text_bytes.as_ref()).unwrap();
-                debug!("Received Text: {}", text);
-                self.determinator
-                    .try_send(Activity)
-                    .expect("Send to determinator");
-                debug!("Sent to determinator");
-            }
-            Frame::Binary(_) => {
-                debug!("Received Binary");
-            }
-            Frame::Continuation(_) => {
-                debug!("Received Continuation");
-            }
-            Frame::Ping(content) => {
-                debug!("Received Ping");
-                // TODO: set hb alive
-                if let Err(error) = self.sink.write(ws::Message::Pong(content)) {
-                    error!("Error returning a ping with a pong: {:?}", error);
+        let (mut websocket, _response) =
+            tungstenite::connect(&self.ws_uri).expect("connecting to websocket");
+
+        ctx.run_interval(
+            std::time::Duration::from_millis(200),
+            move |fed_client, ctx| match websocket.read_message() {
+                Ok(Message::Text(content)) => {
+                    debug!("Text Message received: {}", content);
+                    fed_client.determinator.do_send(Activity);
                 }
-            }
-            Frame::Pong(_) => {
-                debug!("Received Pong");
-                // self.hb = Instant::now();
-            }
-            Frame::Close(_) => {
-                debug!("Received Close");
-            }
-        }
+                Ok(Message::Ping(_)) => {
+                    debug!("Ping received");
+                }
+                Ok(_) => {
+                    debug!("Other message received");
+                }
+                Err(err) => {
+                    error!("Could not read message: {}", err);
+                    ctx.address().do_send(Close);
+                }
+            },
+        );
     }
 }
 
-impl actix::io::WriteHandler<WsProtocolError> for FedClient {}
+impl Handler<Close> for FedClient {
+    type Result = ();
+
+    fn handle(&mut self, _msg: Close, ctx: &mut Self::Context) {
+        debug!("Closing connection with {}", self.ws_uri);
+        ctx.stop();
+    }
+}

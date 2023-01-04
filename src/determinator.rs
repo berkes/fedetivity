@@ -2,6 +2,8 @@ use actix::prelude::*;
 
 use crate::messages::*;
 
+use log::debug;
+
 pub struct Determinator {
     worker: Recipient<Job>
 }
@@ -22,7 +24,8 @@ impl Handler<Activity> for Determinator {
     type Result = ();
 
     fn handle(&mut self, _msg: Activity, _ctx: &mut Self::Context) {
-        self.worker.try_send(Job).unwrap();
+        debug!("Chose to forward");
+        self.worker.do_send(Job);
     }
 }
 
