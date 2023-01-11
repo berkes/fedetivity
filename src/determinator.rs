@@ -5,14 +5,12 @@ use crate::messages::*;
 use log::debug;
 
 pub struct Determinator {
-    worker: Recipient<Job>
+    worker: Recipient<Job>,
 }
 
 impl Determinator {
     pub fn start(worker: Recipient<Job>) -> Addr<Self> {
-        Determinator::create(|_ctx| {
-            Determinator { worker }
-        })
+        Determinator::create(|_ctx| Determinator { worker })
     }
 }
 
@@ -39,7 +37,7 @@ mod tests {
 
     #[derive(Clone, Default)]
     struct TestProbe {
-        received: Vec<Job>
+        received: Vec<Job>,
     }
     impl Actor for TestProbe {
         type Context = Context<Self>;

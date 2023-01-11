@@ -1,13 +1,13 @@
-use std::env;
 use log::{debug, info};
+use std::env;
 
-use actix::{Context, Actor, Handler};
+use actix::{Actor, Context, Handler};
 
 extern crate fedetivity;
 
-use fedetivity::transmitter::*;
 use fedetivity::determinator::*;
 use fedetivity::messages::Job;
+use fedetivity::transmitter::*;
 
 struct LogWorker;
 
@@ -36,6 +36,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fed_client = FedClient::start(determinator.clone().recipient(), ws_uri);
     fed_client.send(fedetivity::messages::Connect).await?;
 
-    actix_rt::signal::ctrl_c().await?; 
+    actix_rt::signal::ctrl_c().await?;
     Ok(())
 }
