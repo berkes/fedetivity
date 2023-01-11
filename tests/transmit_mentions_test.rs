@@ -4,8 +4,6 @@ use actix::prelude::*;
 use fedetivity::messages::*;
 use fedetivity::transmitter::*;
 
-use futures::FutureExt;
-use futures::TryFutureExt;
 use reqwest::Client;
 
 #[derive(Message, Debug)]

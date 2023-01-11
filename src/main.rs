@@ -36,5 +36,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fed_client = FedClient::start(determinator.clone().recipient(), ws_uri);
     fed_client.send(fedetivity::messages::Connect).await?;
 
+    actix_rt::signal::ctrl_c().await?; 
     Ok(())
 }
