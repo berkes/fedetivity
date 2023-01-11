@@ -50,7 +50,7 @@ async fn test_message_calls_is_handled() {
     let receiver = TestReceiver { received: vec![] };
     let receiver_addr = receiver.start();
 
-    let sut = FedClient::start(receiver_addr.clone().recipient(), "wss://localhost:3000/ws".to_string());
+    let sut = FedClient::start(receiver_addr.clone().recipient(), "ws://localhost:3000/ws".to_string());
  
     sut.send(Connect).await.unwrap();
 
