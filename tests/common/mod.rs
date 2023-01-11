@@ -1,7 +1,5 @@
-use log::info;
+pub mod webmocket;
 
 pub fn setup() {
     env_logger::init();
-
-    info!("test: setup");
 }

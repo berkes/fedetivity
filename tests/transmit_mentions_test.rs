@@ -4,8 +4,6 @@ use actix::prelude::*;
 use fedetivity::messages::*;
 use fedetivity::transmitter::*;
 
-use reqwest::Client;
-
 #[derive(Message, Debug)]
 #[rtype(result = "Vec<Activity>")]
 pub struct GetReceived;
@@ -37,13 +35,7 @@ impl Handler<GetReceived> for TestReceiver {
 #[actix_rt::test]
 async fn test_message_calls_is_handled() {
     common::setup();
-
-    // Reset webmocket
-    Client::default()
-        .delete("http://localhost:3000/messages")
-        .send()
-        .await
-        .expect("Reset webmocket server. Is it running?");
+    common::webmocket::reset().await;
 
     let receiver = TestReceiver { received: vec![] };
     let receiver_addr = receiver.start();
@@ -55,14 +47,7 @@ async fn test_message_calls_is_handled() {
 
     sut.send(Connect).await.unwrap();
 
-    // Let the server send us a message
-    let resp = Client::default()
-        .post("http://localhost:3000/messages")
-        .body("New here!")
-        .send()
-        .await
-        .unwrap();
-    dbg!(resp);
+    common::webmocket::server_to_client_message("New here!".to_string()).await;
 
     // Wait untill the message is propagated to our test receiver
     let max_rounds = 5;
