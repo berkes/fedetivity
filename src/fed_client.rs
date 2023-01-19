@@ -8,14 +8,19 @@ pub struct Socket;
 pub struct HttpRequest;
 
 pub struct FedClient {
-    determinator: Recipient<Activity>,
+    activity_mapper: Recipient<Activity>,
     ws_uri: String,
 }
 
+/// FedClient connects to a websocket and passes text messages along.
+///
+/// FedClient connects on `Connect`, and disconnects on `Close`.
+/// FedClient reads incoming messages from websocket and passes any Text message
+/// to its activity_mapper.
 impl FedClient {
-    pub fn start(determinator: Recipient<Activity>, ws_uri: String) -> Addr<Self> {
+    pub fn start(activity_mapper: Recipient<Activity>, ws_uri: String) -> Addr<Self> {
         FedClient::create(|_ctx| FedClient {
-            determinator,
+            activity_mapper,
             ws_uri,
         })
     }
@@ -44,7 +49,7 @@ impl Handler<Connect> for FedClient {
             move |fed_client, ctx| match websocket.read_message() {
                 Ok(Message::Text(content)) => {
                     debug!("Text Message received: {}", content);
-                    fed_client.determinator.do_send(Activity);
+                    fed_client.activity_mapper.do_send(Activity);
                 }
                 Ok(Message::Ping(_)) => {
                     debug!("Ping received");
