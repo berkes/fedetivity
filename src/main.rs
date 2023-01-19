@@ -27,7 +27,7 @@ impl Handler<Job> for LogWorker {
 #[actix_rt::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    let ws_uri = env::var("MASTODON_WS_URL").unwrap_or("ws://localhost:3000/ws".to_string());
+    let ws_uri = env::var("MASTODON_WS_URL").unwrap_or_else(|_| "ws://localhost:3000/ws".to_string());
 
     debug!("Starting Determinator");
     let determinator = Determinator::start(LogWorker.start().recipient());
