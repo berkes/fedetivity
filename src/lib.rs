@@ -1,3 +1,3 @@
 pub mod determinator;
 pub mod messages;
-pub mod transmitter;
+pub mod fed_client;

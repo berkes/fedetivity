@@ -7,7 +7,7 @@ extern crate fedetivity;
 
 use fedetivity::determinator::*;
 use fedetivity::messages::Job;
-use fedetivity::transmitter::*;
+use fedetivity::fed_client::*;
 
 struct LogWorker;
 

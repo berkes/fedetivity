@@ -2,7 +2,7 @@ mod common;
 
 use actix::prelude::*;
 use fedetivity::messages::*;
-use fedetivity::transmitter::*;
+use fedetivity::fed_client::*;
 
 #[derive(Message, Debug)]
 #[rtype(result = "Vec<Activity>")]
