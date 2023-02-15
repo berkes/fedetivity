@@ -1,1 +1,5 @@
+# Secrets and keys
+.env
+
+# Build artifacts
 /target/
